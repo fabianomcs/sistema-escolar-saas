@@ -6,15 +6,15 @@ import { createBrowserClient } from '@supabase/ssr'
 import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
-import { toast } from 'sonner' // Notificações bonitas
-import { matricularAlunoAction } from '@/actions/matricular-aluno'
-import { schemaMatricula } from '@/lib/schemas/matricula' // <--- Nova importação
+import { toast } from 'sonner'
 
-// Nossos novos arquivos criados
 import { DadosPessoaisForm } from '@/components/forms/matricula/DadosPessoaisForm'
 import { ResponsavelSelect } from '@/components/forms/matricula/ResponsavelSelect'
 import { FinanceiroForm } from '@/components/forms/matricula/FinanceiroForm'
 
+// IMPORTANTE: DUAS IMPORTAÇÕES DIFERENTES
+import { matricularAlunoAction } from '@/actions/matricular-aluno'
+import { schemaMatricula } from '@/lib/schemas/matricula'
 
 export default function NovoAlunoPage() {
   const router = useRouter()

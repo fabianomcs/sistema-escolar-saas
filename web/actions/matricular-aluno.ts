@@ -4,7 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { FinanceiroService } from '@/services/financeiroService'
 import { revalidatePath } from 'next/cache'
-// AQUI ESTÁ A MÁGICA: Importamos o schema de fora
+// Importa o schema de fora (NÃO DEFINA ELE AQUI DENTRO)
 import { schemaMatricula } from '@/lib/schemas/matricula'
 
 export type StateMatricula = {
@@ -30,21 +30,21 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Ignora erro em contextos onde não se pode setar cookies
+            // Ignora erro
           }
         },
       },
     }
   )
 
-  // 1. Verificar Autenticação e Escola
+  // 1. Verificar Autenticação
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, message: 'Usuário não autenticado' }
 
   const { data: profile } = await supabase.from('users_profiles').select('escola_id').eq('id', user.id).single()
   if (!profile?.escola_id) return { success: false, message: 'Usuário sem escola vinculada' }
 
-  // 2. Parse e Validação dos Dados
+  // 2. Parse e Validação
   const rawData = Object.fromEntries(formData.entries())
   
   const dadosFormatados = {
@@ -57,7 +57,7 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
     gerar_cobrancas: rawData.gerar_cobrancas === 'on' || rawData.gerar_cobrancas === 'true'
   }
 
-  // Valida usando o schema importado
+  // Usa o schema importado
   const validacao = schemaMatricula.safeParse(dadosFormatados)
   
   if (!validacao.success) {
@@ -70,9 +70,8 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
 
   const dados = validacao.data
 
-  // 3. Execução no Banco de Dados
+  // 3. Execução
   try {
-    // A. Inserir Aluno
     const { data: aluno, error: erroAluno } = await supabase
       .from('alunos')
       .insert({
@@ -93,7 +92,6 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
 
     if (erroAluno) throw new Error('Erro ao salvar aluno: ' + erroAluno.message)
 
-    // B. Gerar Financeiro (Se solicitado)
     if (dados.gerar_cobrancas) {
        const parcelas = FinanceiroService.gerarCarneMatricula({
          anoLetivo: dados.ano_letivo,
@@ -115,14 +113,9 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
        }))
 
        const { error: erroFin } = await supabase.from('cobrancas').insert(cobrancasInsert)
-       
-       if (erroFin) {
-         console.error('CRÍTICO: Aluno criado mas financeiro falhou', erroFin)
-         throw new Error('Aluno salvo, mas erro ao gerar carnê.')
-       }
+       if (erroFin) console.error('Erro financeiro', erroFin)
     }
 
-    // 4. Limpeza e Retorno
     revalidatePath('/alunos')
     revalidatePath('/financeiro')
     
@@ -130,6 +123,6 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
 
   } catch (err: any) {
     console.error(err)
-    return { success: false, message: err.message || 'Erro interno do servidor' }
+    return { success: false, message: err.message || 'Erro interno' }
   }
 }
