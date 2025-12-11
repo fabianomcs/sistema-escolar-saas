@@ -4,7 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { FinanceiroService } from '@/services/financeiroService'
 import { revalidatePath } from 'next/cache'
-// Importação do Schema compartilhado
+// AQUI ESTÁ A MÁGICA: Importamos o schema de fora
 import { schemaMatricula } from '@/lib/schemas/matricula'
 
 export type StateMatricula = {
@@ -47,7 +47,6 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
   // 2. Parse e Validação dos Dados
   const rawData = Object.fromEntries(formData.entries())
   
-  // AQUI ESTAVA O ERRO: Recriamos a variável 'dadosFormatados' que estava faltando
   const dadosFormatados = {
     ...rawData,
     ano_letivo: Number(rawData.ano_letivo),
@@ -58,6 +57,7 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
     gerar_cobrancas: rawData.gerar_cobrancas === 'on' || rawData.gerar_cobrancas === 'true'
   }
 
+  // Valida usando o schema importado
   const validacao = schemaMatricula.safeParse(dadosFormatados)
   
   if (!validacao.success) {
@@ -130,7 +130,6 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
 
   } catch (err: any) {
     console.error(err)
-    // Garante retorno de valor mesmo no erro (Corrige o erro "must return a value")
     return { success: false, message: err.message || 'Erro interno do servidor' }
   }
 }
