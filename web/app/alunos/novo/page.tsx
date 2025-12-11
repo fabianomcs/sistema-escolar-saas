@@ -7,12 +7,14 @@ import { useForm, FormProvider } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ArrowLeft, Save, Loader2 } from 'lucide-react'
 import { toast } from 'sonner' // Notificações bonitas
+import { matricularAlunoAction } from '@/actions/matricular-aluno'
+import { schemaMatricula } from '@/lib/schemas/matricula' // <--- Nova importação
 
 // Nossos novos arquivos criados
 import { DadosPessoaisForm } from '@/components/forms/matricula/DadosPessoaisForm'
 import { ResponsavelSelect } from '@/components/forms/matricula/ResponsavelSelect'
 import { FinanceiroForm } from '@/components/forms/matricula/FinanceiroForm'
-import { matricularAlunoAction, schemaMatricula } from '@/actions/matricular-aluno'
+
 
 export default function NovoAlunoPage() {
   const router = useRouter()

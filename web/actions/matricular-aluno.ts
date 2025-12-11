@@ -2,32 +2,10 @@
 
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { z } from 'zod'
 import { FinanceiroService } from '@/services/financeiroService'
 import { revalidatePath } from 'next/cache'
-
-// 1. Schema de Validação (Zod)
-export const schemaMatricula = z.object({
-  // Dados Pessoais
-  nome_completo: z.string().min(3, "Nome muito curto"),
-  data_nascimento: z.string().refine(val => !isNaN(Date.parse(val)), "Data inválida"),
-  cpf_aluno: z.string().optional(),
-  
-  // Acadêmico
-  turma_id: z.string().uuid("Turma inválida"),
-  turno_contratado: z.enum(['Manhã', 'Tarde', 'Integral']),
-  ano_letivo: z.number().int(),
-  
-  // Financeiro
-  responsavel_id: z.string().uuid("Responsável obrigatório"),
-  dia_vencimento: z.number().min(1).max(31),
-  valor_mensalidade: z.number().positive("Valor deve ser positivo"),
-  valor_matricula: z.number().min(0),
-  desconto_percentual: z.number().min(0).max(100).default(0),
-  
-  // Controle
-  gerar_cobrancas: z.boolean().default(true)
-})
+// Importação do Schema compartilhado
+import { schemaMatricula } from '@/lib/schemas/matricula'
 
 export type StateMatricula = {
   success: boolean
@@ -36,7 +14,6 @@ export type StateMatricula = {
 }
 
 export async function matricularAlunoAction(prevState: any, formData: FormData): Promise<StateMatricula> {
-  // AWAIT OBRIGATÓRIO (Correção do Erro 1)
   const cookieStore = await cookies()
 
   const supabase = createServerClient(
@@ -44,7 +21,6 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        // NOVOS MÉTODOS (Correção do Deprecated)
         getAll() {
           return cookieStore.getAll()
         },
@@ -54,7 +30,7 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Ignora erro se estiver em contexto que não permite setar cookies
+            // Ignora erro em contextos onde não se pode setar cookies
           }
         },
       },
@@ -71,6 +47,7 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
   // 2. Parse e Validação dos Dados
   const rawData = Object.fromEntries(formData.entries())
   
+  // AQUI ESTAVA O ERRO: Recriamos a variável 'dadosFormatados' que estava faltando
   const dadosFormatados = {
     ...rawData,
     ano_letivo: Number(rawData.ano_letivo),
@@ -78,7 +55,7 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
     valor_mensalidade: Number(rawData.valor_mensalidade),
     valor_matricula: Number(rawData.valor_matricula),
     desconto_percentual: Number(rawData.desconto_percentual),
-    gerar_cobrancas: rawData.gerar_cobrancas === 'on'
+    gerar_cobrancas: rawData.gerar_cobrancas === 'on' || rawData.gerar_cobrancas === 'true'
   }
 
   const validacao = schemaMatricula.safeParse(dadosFormatados)
@@ -153,6 +130,7 @@ export async function matricularAlunoAction(prevState: any, formData: FormData):
 
   } catch (err: any) {
     console.error(err)
+    // Garante retorno de valor mesmo no erro (Corrige o erro "must return a value")
     return { success: false, message: err.message || 'Erro interno do servidor' }
   }
 }
