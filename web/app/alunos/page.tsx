@@ -1,12 +1,14 @@
 'use client'
-import { useEffect, useState } from 'react'
+
+import { useEffect, useState, Suspense } from 'react' // <--- 1. Importar Suspense
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { Search, Plus, Filter, MessageCircle, MoreHorizontal, ArrowUp, ArrowDown, FileDown, Printer } from 'lucide-react'
+import { Search, Plus, Filter, MessageCircle, MoreHorizontal, ArrowUp, ArrowDown, Printer } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { gerarPDFListaAlunos } from '@/app/utils/geradorRelatorios'
 
-export default function AlunosPage() {
+// 2. Criamos um componente INTERNO para a lógica da tabela
+function TabelaAlunosContent() {
   const searchParams = useSearchParams()
   const turmaPre = searchParams.get('turma_id')
 
@@ -36,7 +38,11 @@ export default function AlunosPage() {
     carregarDados()
   }, [])
 
-  // Função de Click no Cabeçalho
+  // Atualiza o filtro se a URL mudar
+  useEffect(() => {
+    if (turmaPre) setFiltroTurma(turmaPre)
+  }, [turmaPre])
+
   const handleSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc'
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -45,26 +51,23 @@ export default function AlunosPage() {
     setSortConfig({ key, direction })
   }
 
-  // Ícone de Ordenação
   const SortIcon = ({ colKey }: { colKey: string }) => {
     if (sortConfig.key !== colKey) return null
     return sortConfig.direction === 'asc' ? <ArrowUp size={14} className="ml-1 inline"/> : <ArrowDown size={14} className="ml-1 inline"/>
   }
 
-  // Lógica de Filtragem e Ordenação
   const alunosFiltrados = alunos
     .filter((aluno) => {
       const termo = busca.toLowerCase()
       const matchNome = aluno.nome_completo.toLowerCase().includes(termo)
-      const matchResp = aluno.responsaveis?.nome_completo.toLowerCase().includes(termo)
+      const matchResp = aluno.responsaveis?.nome_completo?.toLowerCase().includes(termo)
       const matchTurma = filtroTurma ? aluno.turma_id === filtroTurma : true
       return (matchNome || matchResp) && matchTurma
     })
     .sort((a, b) => {
-      // Extrai valores
       let valA = '', valB = ''
       
-      if (sortConfig.key === 'nome_completo') { valA = a.nome_completo; valB = b.nome_completo }
+      if (sortConfig.key === 'nome_completo') { valA = a.nome_completo || ''; valB = b.nome_completo || '' }
       else if (sortConfig.key === 'turma') { valA = a.turmas?.nome || ''; valB = b.turmas?.nome || '' }
       else if (sortConfig.key === 'responsavel') { valA = a.responsaveis?.nome_completo || ''; valB = b.responsaveis?.nome_completo || '' }
 
@@ -81,7 +84,6 @@ export default function AlunosPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div><h1 className="text-2xl font-bold text-gray-800">Alunos Matriculados</h1><p className="text-gray-500">Gerencie matrículas e turmas.</p></div>
           <div className="flex gap-2">
-          {/* BOTÃO EXPORTAR PDF */}
           <button 
             onClick={() => gerarPDFListaAlunos(alunosFiltrados, `Lista de Alunos - ${filtroTurma || 'Geral'}`)}
             className="flex items-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg font-bold hover:bg-gray-50 shadow-sm transition-all"
@@ -138,5 +140,14 @@ export default function AlunosPage() {
         </table>
       </div>
     </div>
+  )
+}
+
+// 3. Exportamos a página "Embalada" no Suspense
+export default function AlunosPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-gray-500">Carregando lista de alunos...</div>}>
+      <TabelaAlunosContent />
+    </Suspense>
   )
 }
