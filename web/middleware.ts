@@ -94,24 +94,52 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // CENÁRIO C: Proteção de Rotas por Perfil (RBAC)
-  if (user && !isPublicRoute) {
-    const { data: profile } = await supabase
-      .from('users_profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    
-    const userRole = profile?.role || 'responsavel'
-    const isPortalRoute = path.startsWith('/portal')
+// ... imports
 
-    // Responsável tentando acessar área Administrativa -> Redireciona para o Portal
-    if (userRole === 'responsavel' && !isPortalRoute) {
+// CENÁRIO C: Proteção de Rotas por Perfil
+if (user && !isPublicRoute) {
+  const { data: profile } = await supabase
+    .from('users_profiles')
+    .select('roles, is_superuser') // Buscamos roles (array) e flag super
+    .eq('id', user.id)
+    .single()
+  
+  const roles = profile?.roles || ['responsavel']
+  const isSuper = profile?.is_superuser || false
+  const isPortalRoute = path.startsWith('/portal')
+  const isSystemRoute = path.startsWith('/dashboard') || 
+                        path.startsWith('/alunos') || 
+                        path.startsWith('/financeiro')
+
+  // REGRA 1: Se for Superusuário, libera TUDO.
+  if (isSuper) {
+    return response // Passa livre
+  }
+
+  // REGRA 2: Se tentar acessar SISTEMA ADMIN
+  if (isSystemRoute) {
+    // Precisa ter 'admin' OU 'secretaria'
+    const temPermissaoAdmin = roles.includes('admin') || roles.includes('secretaria')
+    
+    if (!temPermissaoAdmin) {
+      // Se não tem permissão, chuta pro portal dos pais
       const url = request.nextUrl.clone()
       url.pathname = '/portal/home'
       return NextResponse.redirect(url)
     }
   }
+
+  // REGRA 3: Se tentar acessar PORTAL PAIS
+  if (isPortalRoute) {
+    // Precisa ter 'responsavel'
+    if (!roles.includes('responsavel')) {
+      // Se é só admin (sem filho), manda pro dashboard
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+  }
+}
 
   return response
 }

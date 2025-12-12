@@ -12,10 +12,19 @@ export type Responsavel = Row<'responsaveis'>
 export type Turma = Row<'turmas'>
 export type Cobranca = Row<'cobrancas'>
 export type TransacaoLedger = Row<'transacoes_ledger'>
-export type UserProfile = Row<'users_profiles'>
+
+// ATUALIZADO: Definição manual para suportar as mudanças recentes (Multi-Role)
+// Substitui o antigo "Row<'users_profiles'>" que estaria desatualizado
+export interface UserProfile {
+  id: string
+  escola_id: string | null
+  roles: ('admin' | 'secretaria' | 'responsavel')[] | null // Agora é um Array!
+  is_superuser: boolean // Novo campo
+  nome_completo: string | null
+  email: string | null
+}
 
 // 3. Tipos Compostos (Joins comuns no Frontend)
-// Usado quando você faz um .select('*, turmas(nome)')
 export interface AlunoCompleto extends Aluno {
   turmas?: {
     nome: string
@@ -38,8 +47,7 @@ export interface CobrancaCompleta extends Cobranca {
   } | null
 }
 
-// 4. Tipos de Formulários (DTOs - Data Transfer Objects)
-// O que o formulário de matrícula envia para a API (pode ter campos extras que não são colunas diretas)
+// 4. Tipos de Formulários (DTOs)
 export interface MatriculaFormInput {
   // Dados Pessoais
   nome_completo: string
@@ -66,10 +74,10 @@ export interface MatriculaFormInput {
   // Saúde & Extras
   carteira_sus?: string
   tipo_sanguineo?: string
-  alergias?: string // mapeia para restricoes_alimentares ou obs
+  alergias?: string
   possui_necessidade_especial: boolean
   
-  // Controle de UI (não vai pro banco alunos, mas decide se gera cobranças)
+  // Controle de UI
   gerar_cobrancas: boolean 
 }
 
