@@ -1,6 +1,6 @@
 import { Database } from './database.types'
 
-// 1. Helper para pegar o tipo de uma linha direto do banco (atalho)
+// 1. Helpers para tipagem do Supabase
 export type Row<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
 export type InsertDto<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert']
 export type UpdateDto<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update']
@@ -13,13 +13,12 @@ export type Turma = Row<'turmas'>
 export type Cobranca = Row<'cobrancas'>
 export type TransacaoLedger = Row<'transacoes_ledger'>
 
-// ATUALIZADO: Definição manual para suportar as mudanças recentes (Multi-Role)
-// Substitui o antigo "Row<'users_profiles'>" que estaria desatualizado
+// ATUALIZADO: Definição manual para suportar Multi-Role e Superusuário
 export interface UserProfile {
   id: string
   escola_id: string | null
-  roles: ('admin' | 'secretaria' | 'responsavel')[] | null // Agora é um Array!
-  is_superuser: boolean // Novo campo
+  roles: ('admin' | 'secretaria' | 'responsavel')[] | null 
+  is_superuser: boolean 
   nome_completo: string | null
   email: string | null
 }
@@ -27,13 +26,17 @@ export interface UserProfile {
 // 3. Tipos Compostos (Joins comuns no Frontend)
 export interface AlunoCompleto extends Aluno {
   turmas?: {
+    id: string
     nome: string
     turno: string
+    ano_letivo: number 
   } | null
   responsaveis?: {
+    id?: string 
     nome_completo: string
     cpf: string
     telefone_celular: string
+    email: string
   } | null
 }
 

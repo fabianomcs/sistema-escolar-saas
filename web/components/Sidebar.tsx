@@ -1,24 +1,45 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createBrowserClient } from '@supabase/ssr' // Usar a lib correta para client side
 import Link from 'next/link'
 import { LayoutDashboard, Users, Wallet, Settings, GraduationCap, LogOut, School } from 'lucide-react'
-import { usePathname } from 'next/navigation' // Para marcar o menu ativo
+import { usePathname, useRouter } from 'next/navigation'
+import { toast } from 'sonner' // Opcional: Feedback visual
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [escola, setEscola] = useState<any>(null)
+
+  // Criar cliente Supabase
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   useEffect(() => {
     async function carregarEscola() {
-      // Busca os dados da escola (Logo e Nome)
       const { data } = await supabase.from('escolas').select('*').limit(1).single()
       setEscola(data)
     }
     carregarEscola()
   }, [])
 
-  // Função para checar se o link está ativo
+  // --- FUNÇÃO DE LOGOUT ---
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut()
+    
+    if (error) {
+      console.error('Erro ao sair:', error)
+      toast.error('Erro ao encerrar sessão')
+    } else {
+      // Limpa cookies e redireciona
+      router.push('/login')
+      router.refresh() 
+      toast.success('Sessão encerrada com sucesso')
+    }
+  }
+
   const isActive = (path: string) => pathname === path || pathname.startsWith(`${path}/`)
 
   const menuClass = (path: string) => `flex items-center px-6 py-3 transition-colors ${
@@ -30,7 +51,7 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-slate-900 text-white flex flex-col shadow-xl z-20 h-screen fixed left-0 top-0 overflow-y-auto">
       
-      {/* LOGO DA ESCOLA (DINÂMICA) */}
+      {/* LOGO */}
       <div className="h-24 flex items-center justify-center px-4 border-b border-slate-800">
         {escola?.logo_url ? (
           <img 
@@ -49,7 +70,8 @@ export default function Sidebar() {
 
       {/* MENU */}
       <nav className="flex-1 py-6 space-y-1">
-        <Link href="/" className={menuClass('/')}>
+        {/* CORREÇÃO: Link agora aponta para /dashboard, não / */}
+        <Link href="/dashboard" className={menuClass('/dashboard')}>
           <LayoutDashboard size={20} className="mr-3" /> Dashboard
         </Link>
         
@@ -74,11 +96,14 @@ export default function Sidebar() {
         </Link>
       </nav>
 
-      {/* RODAPÉ DO MENU */}
+      {/* RODAPÉ DO MENU COM LOGOUT ATIVO */}
       <div className="p-4 border-t border-slate-800">
-        <button className="flex items-center w-full px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">
+        <button 
+          onClick={handleLogout}
+          className="flex items-center w-full px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded transition-colors"
+        >
           <LogOut size={16} className="mr-3" />
-          Sair
+          Sair do Sistema
         </button>
       </div>
     </aside>
