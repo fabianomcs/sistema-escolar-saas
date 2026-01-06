@@ -1,7 +1,7 @@
 'use client'
 
-// 1. IMPORTANTE: Adicionado 'use' para Next.js 16
-import { useEffect, useState, use } from 'react'
+// 1. Imports
+import { useEffect, useState, use } from 'react' // 'use' requer Next.js 15/React 19
 import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -22,54 +22,62 @@ function ParentAvatar({ name }: { name: string }) {
   )
 }
 
-// 2. Tipar params como Promise
+// 2. Tipar params como Promise (Padrão Next.js 15+)
 export default function DetalhesResponsavelPage({ params }: { params: Promise<{ id: string }> }) {
   // 3. Desembrulhar params com o hook use()
   const { id } = use(params)
 
   const router = useRouter()
-  // Tipo estendido para incluir a lista de filhos
   const [responsavel, setResponsavel] = useState<(Responsavel & { alunos: Aluno[] }) | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  // 4. CORREÇÃO CRÍTICA: Instanciar o Supabase apenas uma vez usando useState
+  const [supabase] = useState(() => 
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
   )
 
   useEffect(() => {
-    async function init() {
-      await carregarResponsavel()
-    }
-    init()
-  }, [id])
+    // Função movida para dentro do useEffect para evitar dependências cíclicas
+    async function carregarResponsavel() {
+      try {
+        setLoading(true)
+        const { data, error } = await supabase
+          .from('responsaveis')
+          .select(`
+            *,
+            alunos (*)
+          `)
+          .eq('id', id)
+          .single()
 
-  async function carregarResponsavel() {
-    try {
-      // 4. Query CORRETA para Responsáveis (trazendo os filhos)
-      const { data, error } = await supabase
-        .from('responsaveis')
-        .select(`
-          *,
-          alunos (*)
-        `)
-        .eq('id', id)
-        .single()
-
-      if (error) {
-        console.error('Erro ao buscar responsável:', error)
-        toast.error('Responsável não encontrado')
-      } else {
-        setResponsavel(data as any)
+        if (error) {
+          console.error('Erro ao buscar responsável:', error)
+          toast.error('Responsável não encontrado')
+          // Opcional: Redirecionar se não encontrar
+          // router.push('/responsaveis')
+        } else {
+          setResponsavel(data as any)
+        }
+      } catch (err) {
+        console.error('Erro crítico:', err)
+        toast.error('Erro ao carregar dados')
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      console.error('Erro crítico:', err)
-    } finally {
-      setLoading(false)
     }
-  }
 
-  if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Carregando perfil...</div>
+    carregarResponsavel()
+  }, [id, supabase]) // Dependências corretas
+
+  if (loading) return (
+    <div className="max-w-5xl mx-auto p-8 space-y-4 animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+        <div className="h-64 bg-gray-100 rounded-xl"></div>
+    </div>
+  )
   
   if (!responsavel) return (
     <div className="p-8 text-center">
