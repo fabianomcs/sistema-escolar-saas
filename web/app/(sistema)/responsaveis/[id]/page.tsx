@@ -139,12 +139,12 @@ export default function DetalhesResponsavelPage({ params }: { params: Promise<{ 
                   <div>
                     <p className="text-xs text-gray-500 uppercase font-bold">Endereço</p>
                     <p className="text-gray-900 font-medium">
-                      {responsavel.endereco_logradouro 
-                        ? `${responsavel.endereco_logradouro}, ${responsavel.endereco_numero} - ${responsavel.endereco_bairro}`
+                      {responsavel.endereco_rua 
+                        ? `${responsavel.endereco_rua}, ${responsavel.endereco_numero} - ${responsavel.endereco_bairro}`
                         : 'Endereço não cadastrado'}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {responsavel.endereco_cidade}/{responsavel.endereco_estado} - CEP: {responsavel.endereco_cep}
+                      {responsavel.endereco_cidade}/{responsavel.endereco_uf} - CEP: {responsavel.endereco_cep}
                     </p>
                   </div>
                 </div>
@@ -167,7 +167,7 @@ export default function DetalhesResponsavelPage({ params }: { params: Promise<{ 
             ) : (
               <div className="grid grid-cols-1 gap-3">
                 {responsavel.alunos.map(filho => (
-                  <Link href={`/alunos/${filho.id}`} key={filho.id}>
+                  <Link href={`/alunos/${filho.id}?voltar_para=/responsaveis/${id}`} key={filho.id}>
                     <div className="group bg-white p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all flex items-center justify-between cursor-pointer">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs">
@@ -199,7 +199,7 @@ export default function DetalhesResponsavelPage({ params }: { params: Promise<{ 
               Verifique pagamentos e pendências vinculadas a este CPF.
             </p>
             
-            <Link href="/financeiro">
+            <Link href={`/responsaveis/${id}/financeiro`}>
               <button className="w-full py-2 bg-white text-blue-600 text-sm font-bold rounded border border-blue-200 hover:bg-blue-50 transition-colors shadow-sm">
                 Ver Extrato Financeiro
               </button>

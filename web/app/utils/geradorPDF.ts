@@ -15,6 +15,13 @@ export async function gerarReciboPDF(cobranca: any, aluno: any, responsavel: any
   doc.setFontSize(10)
   doc.setFont("helvetica", "normal")
   doc.text(`${escola?.endereco_rua || ''}, ${escola?.endereco_numero || ''} - ${escola?.endereco_bairro || ''}`, 105, 26, { align: 'center' })
+
+  // MELHORIA: Linha 2: Cidade - UF | CEP (Adicionado)
+  const cidadeUf = `${escola?.endereco_cidade || ''} - ${escola?.endereco_uf || ''}`
+  const cep = escola?.endereco_cep ? `CEP: ${escola.endereco_cep}` : ''
+  doc.text(`${cidadeUf} ${cep ? `| ${cep}` : ''}`, 105, 31, { align: 'center' })
+
+
   doc.text(`CNPJ: ${escola?.cnpj || ''} | Tel: ${escola?.telefone_suporte || ''}`, 105, 31, { align: 'center' })
   
   doc.setLineWidth(0.5)
