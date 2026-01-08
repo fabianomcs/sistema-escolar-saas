@@ -9,17 +9,18 @@ export function SiteHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-  // 1. Definição dos itens do menu para facilitar manutenção
+  // 1. Definição dos itens do menu (Adicionado 'Calendário')
   const menuItems = [
     { label: 'Início', href: '/' },
     { label: 'A Escola', href: '/sobre' },
     { label: 'Pedagógico', href: '/pedagogico' },
+    { label: 'Calendário', href: '/calendario' }, // <--- NOVO ITEM
     { label: 'Galeria', href: '/galeria' },
     { label: 'Blog', href: '/blog' },
     { label: 'Fale Conosco', href: '/contato' },
   ]
 
-  // 2. Verificação de Login no Cliente (Ao carregar a página)
+  // 2. Verificação de Login no Cliente
   useEffect(() => {
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,7 +68,7 @@ export function SiteHeader() {
           {/* C. BOTÃO DE AÇÃO (Login ou Painel) */}
           <div className="hidden lg:flex items-center">
             {isLoggedIn ? (
-              // USUÁRIO LOGADO: Vai para o Dashboard (O Middleware redireciona pais para o Portal se necessário)
+              // USUÁRIO LOGADO: Vai para o Dashboard
               <Link href="/dashboard">
                 <button className="flex items-center gap-2 bg-green-600 text-white px-6 py-2.5 rounded-full font-bold hover:bg-green-700 transition-all shadow-md shadow-green-100 hover:shadow-lg transform hover:-translate-y-0.5">
                   <LayoutDashboard size={18} />

@@ -1,17 +1,20 @@
 'use client'
+
 import { useEffect, useState } from 'react'
-import { createBrowserClient } from '@supabase/ssr' // Usar a lib correta para client side
+import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
-import { LayoutDashboard, Users, Wallet, Settings, GraduationCap, LogOut, School } from 'lucide-react'
+import { 
+  LayoutDashboard, Users, Wallet, Settings, 
+  GraduationCap, LogOut, School, Megaphone 
+} from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
-import { toast } from 'sonner' // Opcional: Feedback visual
+import { toast } from 'sonner'
 
 export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [escola, setEscola] = useState<any>(null)
 
-  // Criar cliente Supabase
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -25,7 +28,6 @@ export default function Sidebar() {
     carregarEscola()
   }, [])
 
-  // --- FUNÇÃO DE LOGOUT ---
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut()
     
@@ -33,7 +35,6 @@ export default function Sidebar() {
       console.error('Erro ao sair:', error)
       toast.error('Erro ao encerrar sessão')
     } else {
-      // Limpa cookies e redireciona
       router.push('/login')
       router.refresh() 
       toast.success('Sessão encerrada com sucesso')
@@ -70,7 +71,7 @@ export default function Sidebar() {
 
       {/* MENU */}
       <nav className="flex-1 py-6 space-y-1">
-        {/* CORREÇÃO: Link agora aponta para /dashboard, não / */}
+        
         <Link href="/dashboard" className={menuClass('/dashboard')}>
           <LayoutDashboard size={20} className="mr-3" /> Dashboard
         </Link>
@@ -91,12 +92,16 @@ export default function Sidebar() {
           <Users size={20} className="mr-3" /> Responsáveis
         </Link>
 
+        {/* --- CORREÇÃO AQUI: Link aponta para a raiz /comunicacao --- */}
+        <Link href="/comunicacao" className={menuClass('/comunicacao')}>
+          <Megaphone size={20} className="mr-3" /> Comunicação
+        </Link>
+
         <Link href="/configuracoes" className={menuClass('/configuracoes')}>
           <Settings size={20} className="mr-3" /> Configurações
         </Link>
       </nav>
 
-      {/* RODAPÉ DO MENU COM LOGOUT ATIVO */}
       <div className="p-4 border-t border-slate-800">
         <button 
           onClick={handleLogout}

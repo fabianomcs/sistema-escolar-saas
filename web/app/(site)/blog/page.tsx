@@ -1,68 +1,93 @@
-'use client'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
-import { Calendar, User } from 'lucide-react'
+import { Calendar, User, ArrowRight } from 'lucide-react'
 
-export default function BlogPage() {
-  // Dados fictícios por enquanto
-  const posts = [
-    {
-      id: 1,
-      titulo: "Feira de Ciências 2025: Inovação e Sustentabilidade",
-      resumo: "Nossos alunos apresentaram projetos incríveis focados em energia limpa e reciclagem. Confira os vencedores!",
-      data: "10 Dez 2025",
-      autor: "Coordenação",
-      img: "https://images.unsplash.com/photo-1564069114553-1f15cd441553?w=800",
-      slug: "feira-ciencias-2025"
-    },
-    {
-      id: 2,
-      titulo: "Matrículas Abertas: O que muda para o próximo ano?",
-      resumo: "Saiba tudo sobre o novo material didático e as atividades extracurriculares incluídas na mensalidade.",
-      data: "05 Dez 2025",
-      autor: "Secretaria",
-      img: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=800",
-      slug: "matriculas-abertas"
-    },
-    {
-      id: 3,
-      titulo: "Dicas para ajudar seu filho na lição de casa",
-      resumo: "A psicopedagoga Juliana Costa compartilha 5 estratégias para criar uma rotina de estudos saudável.",
-      data: "28 Nov 2025",
-      autor: "Pedagógico",
-      img: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800",
-      slug: "dicas-licao-casa"
-    }
-  ]
+// Busca dados no servidor (Server Component)
+async function getPosts() {
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
+  )
+
+  const { data } = await supabase
+    .from('cms_posts')
+    .select('*')
+    .eq('publicado', true)
+    .order('created_at', { ascending: false })
+
+  return data || []
+}
+
+export default async function BlogPublicoPage() {
+  const posts = await getPosts()
 
   return (
-    <div className="bg-gray-50 py-16">
-      <div className="max-w-7xl mx-auto px-4">
-        <h1 className="text-4xl font-bold text-gray-900 mb-12 text-center">Blog & Notícias</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {posts.map(post => (
-            <div key={post.id} className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all border border-gray-100 group">
-              <div className="h-48 overflow-hidden">
-                <img src={post.img} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={post.titulo} />
-              </div>
-              <div className="p-6">
-                <div className="flex gap-4 text-xs text-gray-400 mb-3">
-                  <span className="flex items-center gap-1"><Calendar size={12}/> {post.data}</span>
-                  <span className="flex items-center gap-1"><User size={12}/> {post.autor}</span>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors">
-                  {post.titulo}
-                </h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                  {post.resumo}
-                </p>
-                <Link href={`/blog/${post.slug}`} className="text-blue-600 font-bold text-sm hover:underline">
-                  Ler matéria completa &rarr;
-                </Link>
-              </div>
-            </div>
-          ))}
+    <div className="min-h-screen bg-gray-50 pb-20">
+      
+      {/* Hero */}
+      <div className="bg-slate-900 text-white py-20">
+        <div className="container mx-auto px-4 text-center">
+          <h1 className="text-4xl font-bold mb-4">Blog da Escola</h1>
+          <p className="text-slate-300 text-lg max-w-2xl mx-auto">
+            Acompanhe nossas notícias, eventos e conquistas dos alunos.
+          </p>
         </div>
+      </div>
+
+      <div className="container mx-auto px-4 max-w-6xl -mt-10">
+        {posts.length === 0 ? (
+           <div className="bg-white p-12 rounded-xl shadow-lg text-center">
+              <p className="text-gray-500">Nenhuma publicação encontrada no momento.</p>
+           </div>
+        ) : (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {posts.map((post) => (
+              <div key={post.id} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow flex flex-col h-full group">
+                
+                {/* Imagem de Capa */}
+                <div className="aspect-video bg-gray-200 relative overflow-hidden">
+                  {post.imagem_capa ? (
+                    <img 
+                      src={post.imagem_capa} 
+                      alt={post.titulo} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
+                      Sem Imagem
+                    </div>
+                  )}
+                </div>
+
+                {/* Conteúdo */}
+                <div className="p-6 flex flex-col flex-1">
+                  <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
+                    <span className="flex items-center gap-1">
+                      <Calendar size={12}/> {new Date(post.created_at).toLocaleDateString('pt-BR')}
+                    </span>
+                  </div>
+
+                  <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                    {post.titulo}
+                  </h3>
+                  
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3 flex-1">
+                    {post.resumo || 'Sem resumo disponível.'}
+                  </p>
+
+                  <Link href={`/blog/${post.slug}`} className="mt-auto">
+                    <button className="text-blue-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all">
+                      Ler Notícia Completa <ArrowRight size={16}/>
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
